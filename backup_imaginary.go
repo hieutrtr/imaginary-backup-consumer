@@ -1,7 +1,9 @@
 package main
 
-import "github.com/hieutrtr/imaginary-backup-consumer/consumer"
-import "github.com/hieutrtr/imaginary-backup-consumer/ceph_block"
+import (
+	"github.com/hieutrtr/imaginary-backup-consumer/consumer"
+	"github.com/hieutrtr/imaginary-backup-consumer/obj2block"
+)
 
 func main() {
 	config := &consumer.Config{
@@ -10,7 +12,7 @@ func main() {
 		group:   "backup-imaginary",
 	}
 	cons := consumer.NewUploadConsumer(config, func(e *consumer.Event) error {
-		err := ceph_block.Upload(e.Topic, e.Payload)
+		err := obj2block.Transfer(e.Topic, e.Payload)
 		if err != nil {
 			return err
 		}
