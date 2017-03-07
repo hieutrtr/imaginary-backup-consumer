@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/hieutrtr/imaginary-backup-consumer/ceph/obj2block"
-	"github.com/hieutrtr/imaginary-backup-consumer/kafka/consumer"
+	"github.com/hieutrtr/imaginary-backup-consumer/block"
+	"github.com/hieutrtr/imaginary-backup-consumer/consumer"
 )
 
 func main() {
 	config := &consumer.Config{
-		brokers: []string{"10.60.3.49:9092", "10.60.3.50:9092"},
-		topics:  []string{"imaginary-upload-profile_avatar"},
-		group:   "backup-imaginary",
+		Brokers: []string{"10.60.3.49:9092", "10.60.3.50:9092"},
+		Topics:  []string{"imaginary-upload-profile_avatar"},
+		Group:   "backup-imaginary",
 	}
 	cons := consumer.NewUploadConsumer(config, func(e *consumer.Event) error {
-		err := obj2block.Transfer(e.Topic, e.Payload)
+		err := block.Transfer(e.Topic, e.Payload)
 		if err != nil {
 			return err
 		}
