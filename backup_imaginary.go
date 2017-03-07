@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/hieutrtr/imaginary-backup-consumer/consumer"
-	"github.com/hieutrtr/imaginary-backup-consumer/obj2block"
+	"github.com/hieutrtr/imaginary-backup-consumer/ceph/obj2block"
+	"github.com/hieutrtr/imaginary-backup-consumer/kafka/consumer"
 )
 
 func main() {
