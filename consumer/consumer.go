@@ -33,6 +33,8 @@ type UploadConsumer struct {
 	process  FnProcess
 }
 
+const UploadEventPrefix = "imaginary-upload-"
+
 // Consume upload events
 func (c *UploadConsumer) Consume() {
 	for {
@@ -40,12 +42,13 @@ func (c *UploadConsumer) Consume() {
 		case msg := <-c.consumer.Messages():
 			fmt.Fprintf(os.Stdout, "%s/%d/%d\t%s\t%s\n", msg.Topic, msg.Partition, msg.Offset, msg.Key, msg.Value)
 			err := c.process(&Event{
-				Topic:   msg.Topic,
+				Topic:   UploadEventPrefix + msg.Topic,
 				Payload: string(msg.Value),
 			})
-			if err == nil {
-				c.consumer.MarkOffset(msg, "") // mark message as processed
+			if err != nil {
+				fmt.Println(err)
 			}
+			c.consumer.MarkOffset(msg, "") // mark message as processed
 		}
 	}
 }

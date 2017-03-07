@@ -26,7 +26,6 @@ func postToBlock(buf []byte) error {
 }
 
 func fetchObject(pool, oid string) ([]byte, error) {
-
 	connector, err := rados.NewConn()
 	connector.ReadConfigFile("/etc/ceph/ceph.conf")             // Specify config
 	connector.SetConfigOption("log_file", "/etc/ceph/ceph.log") // Specify log path
