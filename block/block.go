@@ -14,6 +14,7 @@ var contexts map[string]*rados.IOContext
 var conn *rados.Conn
 var pools = []string{"ads", "profile_avatar", "property_project"}
 var baseUrl = os.Getenv("BLOCK_URL")
+var cephConfig = os.Getenv("CEPH_CONF")
 
 func init() {
 	RegisterContext()
@@ -22,8 +23,13 @@ func init() {
 // RegisterContext for imaginary
 func RegisterContext() {
 	conn, _ = rados.NewConn()
-	conn.ReadConfigFile("/etc/ceph/ceph.conf")             // Specify config
-	conn.SetConfigOption("log_file", "/etc/ceph/ceph.log") // Specify log path
+	if baseUrl == "" {
+		baseUrl = "images"
+	}
+	if cephConfig == "" {
+		cephConfig = "/etc/ceph/ceph.conf"
+	}
+	conn.ReadConfigFile(cephConfig) // Specify config
 	conn.Connect()
 	contexts = make(map[string]*rados.IOContext, len(pools))
 	var err error
@@ -52,7 +58,8 @@ func Transfer(pool, oid string) error {
 }
 
 func postToBlock(path string, buf []byte) error {
-	return ioutil.WriteFile(baseUrl+path, buf, 0644)
+	url := fmt.Sprintf("/%s/%s", baseUrl, path)
+	return ioutil.WriteFile(url, buf, 0644)
 }
 
 func fetchObject(pool, oid string) ([]byte, error) {
