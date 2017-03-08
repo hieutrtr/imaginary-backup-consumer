@@ -23,7 +23,7 @@ func RegisterContext() {
 	conn.SetConfigOption("log_file", "/etc/ceph/ceph.log") // Specify log path
 	conn.Connect()
 	for _, pool := range pools {
-		contexts[pool], _ = connector.OpenIOContext(pool)
+		contexts[pool], _ = conn.OpenIOContext(pool)
 	}
 }
 
@@ -56,7 +56,7 @@ func fetchObject(pool, oid string) ([]byte, error) {
 }
 
 func Close() {
-	for pool := range pools {
+	for _, pool := range pools {
 		contexts[pool].Destroy()
 	}
 	conn.Shutdown()
