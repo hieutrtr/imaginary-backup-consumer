@@ -53,7 +53,7 @@ func (c *UploadConsumer) Consume() {
 }
 
 // NewUploadConsumer create consumer of upload event
-func NewUploadConsumer(c *Config, fn FnProcess) Consumer {
+func NewUploadConsumer(c *Config, fn FnProcess) (Consumer, error) {
 
 	config := cluster.NewConfig()
 	config.Consumer.Return.Errors = true
@@ -61,11 +61,10 @@ func NewUploadConsumer(c *Config, fn FnProcess) Consumer {
 
 	cons, err := cluster.NewConsumer(c.Brokers, c.Group, c.Topics, config)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	fmt.Println(cons)
 	return &UploadConsumer{
 		consumer: cons,
 		process:  fn,
-	}
+	}, nil
 }
