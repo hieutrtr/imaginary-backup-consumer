@@ -1,0 +1,54 @@
+variables:
+  DIST_NAME: wsm
+
+before_script:
+- pwd
+- export VERSION=$(~/wsm version)
+- export PACKAGE=$(~/wsm package)
+- export DIST_NAME=$(~/wsm dist-name)
+
+after_script:
+- tree
+
+stages:
+- test
+- build
+- dockerize
+- clean
+
+test:
+  stage: test
+  script:
+  - docker run -v `pwd`:/go/src/$PACKAGE golang:alpine go test -v $PACKAGE/...
+  tags:
+  - shell
+
+build:compile:
+  stage: build
+  script:
+  - mkdir -p dist
+  - docker run -v `pwd`:/go/src/$PACKAGE golang:alpine go build -o /go/src/$PACKAGE/dist/$DIST_NAME -v $PACKAGE
+  artifacts:
+    untracked: true
+    expire_in: 5min
+    paths:
+    - dist/
+  tags:
+  - shell
+
+dockerize:
+  stage: dockerize
+  script:
+  - docker build -t docker.chotot.org/$DIST_NAME:$VERSION .
+  - docker push docker.chotot.org/$DIST_NAME:$VERSION
+  tags:
+  - shell
+
+clean:docker:
+  stage: clean
+  script:
+  - docker rm $(docker ps -aq f status=exited)
+  - docker images
+  - docker rmi -f docker.chotot.org/$DIST_NAME:$VERSION
+  tags:
+  - shell
