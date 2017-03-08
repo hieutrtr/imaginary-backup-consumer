@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"fmt"
-	"os"
 
 	cluster "github.com/bsm/sarama-cluster"
 )
@@ -40,7 +39,6 @@ func (c *UploadConsumer) Consume() {
 	for {
 		select {
 		case msg := <-c.consumer.Messages():
-			fmt.Fprintf(os.Stdout, "%s/%d/%d\t%s\t%s\n", msg.Topic, msg.Partition, msg.Offset, msg.Key, msg.Value)
 			err := c.process(&Event{
 				Topic:   UploadEventPrefix + msg.Topic,
 				Payload: string(msg.Value),
