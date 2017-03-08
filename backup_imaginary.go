@@ -8,7 +8,7 @@ import (
 func main() {
 	config := &consumer.Config{
 		Brokers: []string{"10.60.3.49:9092", "10.60.3.50:9092"},
-		Topics:  []string{"profile_avatar"},
+		Topics:  []string{"imaginary-upload-profile_avatar", "imaginary-upload-ads", "imaginary-upload-property_project"},
 		Group:   "backup-imaginary",
 	}
 	cons := consumer.NewUploadConsumer(config, func(e *consumer.Event) error {

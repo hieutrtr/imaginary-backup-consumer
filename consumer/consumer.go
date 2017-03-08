@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"fmt"
+	"strings"
 
 	cluster "github.com/bsm/sarama-cluster"
 )
@@ -32,7 +33,7 @@ type UploadConsumer struct {
 	process  FnProcess
 }
 
-const UploadEventPrefix = "imaginary-upload-"
+const uploadEventPrefix = "imaginary-upload-"
 
 // Consume upload events
 func (c *UploadConsumer) Consume() {
@@ -40,7 +41,7 @@ func (c *UploadConsumer) Consume() {
 		select {
 		case msg := <-c.consumer.Messages():
 			err := c.process(&Event{
-				Topic:   UploadEventPrefix + msg.Topic,
+				Topic:   strings.Replace(msg.Topic, uploadEventPrefix, "", -1),
 				Payload: string(msg.Value),
 			})
 			if err != nil {
@@ -62,6 +63,7 @@ func NewUploadConsumer(c *Config, fn FnProcess) Consumer {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(cons)
 	return &UploadConsumer{
 		consumer: cons,
 		process:  fn,

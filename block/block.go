@@ -10,7 +10,7 @@ import (
 
 var contexts map[string]*rados.IOContext
 var conn *rados.Conn
-var pools = []string{"ads", "avatar_profile", "property_project"}
+var pools = []string{"ads", "profile_avatar", "property_project"}
 
 func init() {
 	RegisterContext()
@@ -22,8 +22,13 @@ func RegisterContext() {
 	conn.ReadConfigFile("/etc/ceph/ceph.conf")             // Specify config
 	conn.SetConfigOption("log_file", "/etc/ceph/ceph.log") // Specify log path
 	conn.Connect()
+	contexts = make(map[string]*rados.IOContext, len(pools))
+	var err error
 	for _, pool := range pools {
-		contexts[pool], _ = conn.OpenIOContext(pool)
+		contexts[pool], err = conn.OpenIOContext(pool)
+		if err != nil {
+			fmt.Println("Can not open context " + pool)
+		}
 	}
 }
 
@@ -31,6 +36,7 @@ func RegisterContext() {
 func Transfer(pool, oid string) error {
 	buf, err := fetchObject(pool, oid)
 	if err != nil {
+		fmt.Println("Can not fetch object " + pool)
 		return err
 	}
 	err = postToBlock(buf)
@@ -55,6 +61,7 @@ func fetchObject(pool, oid string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Close all contexts and connection
 func Close() {
 	for _, pool := range pools {
 		contexts[pool].Destroy()
