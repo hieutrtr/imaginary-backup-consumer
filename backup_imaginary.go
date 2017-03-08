@@ -1,15 +1,28 @@
 package main
 
 import (
+	"flag"
+	"strings"
+
 	"github.com/hieutrtr/imaginary-backup-consumer/block"
 	"github.com/hieutrtr/imaginary-backup-consumer/consumer"
 )
 
+var (
+	aBrokers = flag.String("brokers", "", "Kafka Brokers")
+	aTopics  = flag.String("topics", "imaginary-upload-profile_avatar,imaginary-upload-ads,imaginary-upload-property_project", "Kafka topics")
+	aGroup   = flag.String("group", "imaginary-backup", "Consumer group name")
+)
+
 func main() {
+	flag.Parse()
+	if *aBrokers == "" || *aTopics == "" || *aGroup == "" {
+		panic("Missing params")
+	}
 	config := &consumer.Config{
-		Brokers: []string{"10.60.3.493:9092", "10.60.33.50:9092"},
-		Topics:  []string{"imaginary-upload-profile_avatar", "imaginary-upload-ads", "imaginary-upload-property_project"},
-		Group:   "backup-imaginary",
+		Brokers: strings.Split(*aBrokers, ","),
+		Topics:  strings.Split(*aTopics, ","),
+		Group:   *aGroup,
 	}
 	cons, err := consumer.NewUploadConsumer(config, func(e *consumer.Event) error {
 		err := block.Transfer(e.Topic, e.Payload)
