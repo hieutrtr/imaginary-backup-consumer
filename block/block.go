@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 
 	"github.com/noahdesu/go-ceph/rados"
 )
@@ -11,6 +13,7 @@ import (
 var contexts map[string]*rados.IOContext
 var conn *rados.Conn
 var pools = []string{"ads", "profile_avatar", "property_project"}
+var baseUrl = os.Getenv("BLOCK_URL")
 
 func init() {
 	RegisterContext()
@@ -39,16 +42,17 @@ func Transfer(pool, oid string) error {
 		fmt.Println("Can not fetch object " + pool)
 		return err
 	}
-	err = postToBlock(buf)
+	path := fmt.Sprintf("/%s/%s", pool, oid)
+	err = postToBlock(path, buf)
 	if err != nil {
 		return err
 	}
+	fmt.Println("Transfered file to: ", baseUrl+path)
 	return nil
 }
 
-func postToBlock(buf []byte) error {
-	fmt.Println(string(buf))
-	return nil
+func postToBlock(path string, buf []byte) error {
+	return ioutil.WriteFile(baseUrl+path, buf, 0644)
 }
 
 func fetchObject(pool, oid string) ([]byte, error) {
