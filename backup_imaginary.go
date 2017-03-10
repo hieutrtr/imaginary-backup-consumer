@@ -9,9 +9,11 @@ import (
 )
 
 var (
-	aBrokers = flag.String("brokers", "", "Kafka Brokers")
-	aTopics  = flag.String("topics", "imaginary-upload-profile_avatar,imaginary-upload-ads,imaginary-upload-property_project", "Kafka topics")
-	aGroup   = flag.String("group", "imaginary-backup", "Consumer group name")
+	aBrokers    = flag.String("brokers", "", "Kafka Brokers")
+	aTopics     = flag.String("topics", "imaginary-upload-profile_avatar,imaginary-upload-ads,imaginary-upload-property_project", "Kafka topics")
+	aGroup      = flag.String("group", "imaginary-backup", "Consumer group name")
+	aType       = flag.String("type", "backup", "Backup or Restore ?")
+	aOffsetInit = flag.Int64("offset-init", OffsetNewest, "Newest : -1, Oldest : -2")
 )
 
 func main() {
@@ -20,12 +22,18 @@ func main() {
 		panic("Missing params")
 	}
 	config := &consumer.Config{
-		Brokers: strings.Split(*aBrokers, ","),
-		Topics:  strings.Split(*aTopics, ","),
-		Group:   *aGroup,
+		Brokers:    strings.Split(*aBrokers, ","),
+		Topics:     strings.Split(*aTopics, ","),
+		Group:      *aGroup,
+		OffsetInit: *aOffsetInit,
 	}
 	cons, err := consumer.NewUploadConsumer(config, func(e *consumer.Event) error {
-		err := block.Transfer(e.Topic, e.Payload)
+		var err error
+		if *aType == "backup" {
+			err = block.Transfer(e.Topic, e.Payload)
+		} else {
+			err = block.Restore(e.Topic, e.Payload)
+		}
 		if err != nil {
 			return err
 		}
