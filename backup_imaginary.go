@@ -13,7 +13,7 @@ var (
 	aTopics     = flag.String("topics", "imaginary-upload-profile_avatar,imaginary-upload-ads,imaginary-upload-property_project", "Kafka topics")
 	aGroup      = flag.String("group", "imaginary-backup", "Consumer group name")
 	aType       = flag.String("type", "backup", "Backup or Restore ?")
-	aOffsetInit = flag.Int64("offset-init", OffsetNewest, "Newest : -1, Oldest : -2")
+	aOffsetInit = flag.Int64("offset-init", consumer.OffsetNewest, "Newest : -1, Oldest : -2")
 )
 
 func main() {
