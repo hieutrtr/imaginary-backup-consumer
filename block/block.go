@@ -62,6 +62,26 @@ func postToBlock(path string, buf []byte) error {
 	return ioutil.WriteFile(url, buf, 0644)
 }
 
+// Restore from block to object storage
+func Restore(pool, oid string) error {
+	path := fmt.Sprintf("/%s/%s", pool, oid)
+	data, err := fetchBlock(path)
+	if err != nil {
+		fmt.Println("Can not fetch from block path " + path)
+		return err
+	}
+	return pushObject(pool, oid, data)
+}
+
+func fetchBlock(path string) ([]byte, error) {
+	url := fmt.Sprintf("/%s/%s", baseUrl, path)
+	return ioutil.ReadFile(url)
+}
+
+func pushObject(pool, oid string, data []byte) error {
+	return contexts[pool].SetXattr(oid, "data", data)
+}
+
 func fetchObject(pool, oid string) ([]byte, error) {
 	data := make([]byte, 5242880)
 	leng, _ := contexts[pool].GetXattr(oid, "data", data)
