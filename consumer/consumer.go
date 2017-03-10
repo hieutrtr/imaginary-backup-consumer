@@ -78,7 +78,6 @@ func NewUploadConsumer(c *Config, fn FnProcess) (Consumer, error) {
 	if err != nil {
 		return nil, err
 	}
-	cons.csmr.ConsumePartition
 	return &UploadConsumer{
 		consumer: cons,
 		process:  fn,
