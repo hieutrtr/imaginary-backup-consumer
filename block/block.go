@@ -13,8 +13,10 @@ import (
 var contexts map[string]*rados.IOContext
 var conn *rados.Conn
 var pools = []string{"ads", "profile_avatar", "property_project"}
-var baseUrl = os.Getenv("BLOCK_URL")
+var baseURL = os.Getenv("BLOCK_URL")
 var cephConfig = os.Getenv("CEPH_CONF")
+
+const MAX_OBJECT_BYTE = 20971520
 
 func init() {
 	RegisterContext()
@@ -23,8 +25,8 @@ func init() {
 // RegisterContext for imaginary
 func RegisterContext() {
 	conn, _ = rados.NewConn()
-	if baseUrl == "" {
-		baseUrl = "images"
+	if baseURL == "" {
+		baseURL = "images"
 	}
 	if cephConfig == "" {
 		cephConfig = "/etc/ceph/ceph.conf"
@@ -53,12 +55,12 @@ func Transfer(pool, oid string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Transfered file to: ", baseUrl+path)
+	fmt.Println("Transfered file to: ", baseURL+path)
 	return nil
 }
 
 func postToBlock(path string, buf []byte) error {
-	url := fmt.Sprintf("/%s/%s", baseUrl, path)
+	url := fmt.Sprintf("/%s/%s", baseURL, path)
 	return ioutil.WriteFile(url, buf, 0644)
 }
 
@@ -74,7 +76,7 @@ func Restore(pool, oid string) error {
 }
 
 func fetchBlock(path string) ([]byte, error) {
-	url := fmt.Sprintf("/%s/%s", baseUrl, path)
+	url := fmt.Sprintf("/%s/%s", baseURL, path)
 	return ioutil.ReadFile(url)
 }
 
@@ -83,7 +85,7 @@ func pushObject(pool, oid string, data []byte) error {
 }
 
 func fetchObject(pool, oid string) ([]byte, error) {
-	data := make([]byte, 5242880)
+	data := make([]byte, MAX_OBJECT_BYTE)
 	leng, _ := contexts[pool].GetXattr(oid, "data", data)
 
 	buf := bytes.NewBuffer(make([]byte, 0, leng+1))
