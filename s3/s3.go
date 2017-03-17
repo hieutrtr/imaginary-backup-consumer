@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	s3 "github.com/minio/minio-go"
 )
@@ -47,5 +48,8 @@ func Restore(service, oid string) error {
 		fmt.Println("Can not fetch from block path " + path)
 		return err
 	}
-	return client.PutObject(service, oid, bytes.NewReader(data), s3ObjContentType)
+	service = strings.Replace(service, "_", "-", -1)
+	fmt.Println(service, oid)
+	_, err = client.PutObject(service, oid, bytes.NewReader(data), s3ObjContentType)
+	return err
 }
