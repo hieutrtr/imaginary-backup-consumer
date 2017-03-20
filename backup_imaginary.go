@@ -32,7 +32,11 @@ func main() {
 	cons, err := consumer.NewUploadConsumer(config, func(e *consumer.Event) error {
 		var err error
 		if *aType == "backup" {
-			err = block.Transfer(e.Topic, e.Payload)
+			if *aService == "s3" {
+				err = s3.Transfer(e.Topic, e.Payload)
+			} else {
+				err = block.Transfer(e.Topic, e.Payload)
+			}
 		} else {
 			if *aService == "s3" {
 				err = s3.Restore(e.Topic, e.Payload)

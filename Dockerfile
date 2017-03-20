@@ -1,6 +1,6 @@
 # Start from a Debian image with the latest version of Go installed
 # and a workspace (GOPATH) configured at /go.
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 # Go version to use
 ENV GOLANG_VERSION 1.7.1
