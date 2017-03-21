@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	s3 "github.com/minio/minio-go"
@@ -23,18 +21,19 @@ var (
 
 var client *s3.Client
 
-func init() {
-	var err error
-	var useSSL bool
-	if useSSL, err = strconv.ParseBool(s3UseSSL); err != nil {
-		useSSL = false
-	}
-	client, err = s3.New(s3EndPoint, s3AccessKeyID, s3SecretAccessKey, useSSL)
-	if err != nil {
-		log.Fatalln("Fail to connect S3 %s", fmt.Sprint(err))
-		os.Exit(1)
-	}
-}
+//
+// func init() {
+// 	var err error
+// 	var useSSL bool
+// 	if useSSL, err = strconv.ParseBool(s3UseSSL); err != nil {
+// 		useSSL = false
+// 	}
+// 	client, err = s3.New(s3EndPoint, s3AccessKeyID, s3SecretAccessKey, useSSL)
+// 	if err != nil {
+// 		log.Fatalln("Fail to connect S3 %s", fmt.Sprint(err))
+// 		os.Exit(1)
+// 	}
+// }
 
 func fetchBlock(path string) ([]byte, error) {
 	url := fmt.Sprintf("/%s/%s", baseURL, path)

@@ -14,7 +14,7 @@ var (
 	aTopics     = flag.String("topics", "imaginary-upload-profile_avatar,imaginary-upload-ads,imaginary-upload-property_project", "Kafka topics")
 	aGroup      = flag.String("group", "imaginary-backup", "Consumer group name")
 	aType       = flag.String("type", "backup", "Backup or Restore ?")
-	aService    = flag.String("service", "s3", "S3 or Ceph")
+	aService    = flag.String("service", "ceph", "S3 or Ceph")
 	aOffsetInit = flag.Int64("offset-init", consumer.OffsetNewest, "Newest : -1, Oldest : -2")
 )
 

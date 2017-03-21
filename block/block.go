@@ -1,51 +1,88 @@
 package block
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
+	"log"
 	"os"
+	"strings"
 
 	"github.com/noahdesu/go-ceph/rados"
 )
 
-var contexts map[string]*rados.IOContext
-var conn *rados.Conn
-var pools = []string{"ads", "profile_avatar", "property_project"}
-var baseURL = os.Getenv("BLOCK_URL")
-var cephConfig = os.Getenv("CEPH_CONF")
+// Block structure
+type Block struct {
+	contexts map[string]*rados.IOContext
+	conn     *rados.Conn
+}
+
+var (
+	pools         = os.Getenv("CEPH_POOLS")
+	cephConfig    = os.Getenv("CEPH_CONF")
+	cephBlockPath = os.Getenv("CEPH_BLOCK_PATH")
+)
+
+var block *Block
 
 const MAX_OBJECT_BYTE = 20971520
 
 func init() {
-	RegisterContext()
+	defer func() {
+		if r := recover(); r != nil {
+			block.Shutdown()
+			log.Print(r)
+		}
+	}()
+
+	block = NewCephBlock()
+	block.RegisterContext(pools)
+}
+
+// Shutdown ceph connection
+func (blk *Block) Shutdown() {
+	if blk.conn != nil {
+		defer blk.conn.Shutdown()
+		for _, ctx := range blk.contexts {
+			ctx.Destroy()
+		}
+	}
+}
+
+// NewCephConnection for imaginary
+func NewCephBlock() *Block {
+	if cephConfig == "" {
+		exitWithError("missing CEPH_CONF env")
+	}
+	if cephBlockPath == "" {
+		exitWithError("missing CEPH_BLOCK_PATH env")
+	}
+	blk := &Block{}
+	blk.conn, _ = rados.NewConn()
+	blk.conn.ReadConfigFile(cephConfig) // Specify config
+	blk.conn.Connect()
+	return blk
 }
 
 // RegisterContext for imaginary
-func RegisterContext() {
-	conn, _ = rados.NewConn()
-	if baseURL == "" {
-		baseURL = "images"
+func (blk *Block) RegisterContext(pools string) {
+	if pools == "" {
+		exitWithError("missing CEPH_POOLS env")
 	}
-	if cephConfig == "" {
-		cephConfig = "/etc/ceph/ceph.conf"
-	}
-	conn.ReadConfigFile(cephConfig) // Specify config
-	conn.Connect()
-	contexts = make(map[string]*rados.IOContext, len(pools))
+	poolsArray := strings.Split(pools, ",")
+	blk.contexts = make(map[string]*rados.IOContext, len(poolsArray))
 	var err error
-	for _, pool := range pools {
-		contexts[pool], err = conn.OpenIOContext(pool)
+	for _, pool := range poolsArray {
+		log.Print(pool)
+		blk.contexts[pool], err = blk.conn.OpenIOContext(pool)
 		if err != nil {
-			fmt.Println("Can not open context " + pool)
+			exitWithError("Can not open context " + pool + " with error " + fmt.Sprintln(err))
 		}
 	}
 }
 
 // Transfer ceph object to block or disk
 func Transfer(pool, oid string) error {
-	buf, err := fetchObject(pool, oid)
+	buf, err := block.fetchObject(pool, oid)
 	if err != nil {
 		fmt.Println("Can not fetch object " + pool)
 		return err
@@ -55,13 +92,8 @@ func Transfer(pool, oid string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Transfered file to: ", baseURL+path)
+	fmt.Println("Transfered file to: ", cephBlockPath+path)
 	return nil
-}
-
-func postToBlock(path string, buf []byte) error {
-	url := fmt.Sprintf("/%s/%s", baseURL, path)
-	return ioutil.WriteFile(url, buf, 0644)
 }
 
 // Restore from block to object storage
@@ -72,32 +104,29 @@ func Restore(pool, oid string) error {
 		fmt.Println("Can not fetch from block path " + path)
 		return err
 	}
-	return pushObject(pool, oid, data)
+	return block.pushObject(pool, oid, data)
+}
+
+func postToBlock(path string, buf []byte) error {
+	url := fmt.Sprintf("/%s/%s", cephBlockPath, path)
+	return ioutil.WriteFile(url, buf, 0644)
 }
 
 func fetchBlock(path string) ([]byte, error) {
-	url := fmt.Sprintf("/%s/%s", baseURL, path)
+	url := fmt.Sprintf("/%s/%s", cephBlockPath, path)
 	return ioutil.ReadFile(url)
 }
 
-func pushObject(pool, oid string, data []byte) error {
-	return contexts[pool].SetXattr(oid, "data", data)
+func (blk *Block) pushObject(pool, oid string, data []byte) error {
+	return blk.contexts[pool].SetXattr(oid, "data", data)
 }
 
-func fetchObject(pool, oid string) ([]byte, error) {
+func (blk *Block) fetchObject(pool, oid string) ([]byte, error) {
 	data := make([]byte, MAX_OBJECT_BYTE)
-	leng, _ := contexts[pool].GetXattr(oid, "data", data)
-
-	buf := bytes.NewBuffer(make([]byte, 0, leng+1))
-	io.Copy(buf, bytes.NewReader(data[:leng]))
-	// BonusStep: Get attribute
-	return buf.Bytes(), nil
+	leng, _ := blk.contexts[pool].GetXattr(oid, "data", data)
+	return data[:leng], nil
 }
 
-// Close all contexts and connection
-func Close() {
-	for _, pool := range pools {
-		contexts[pool].Destroy()
-	}
-	conn.Shutdown()
+func exitWithError(mess string) {
+	panic("block: " + mess)
 }
